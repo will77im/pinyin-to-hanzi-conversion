@@ -53,16 +53,25 @@ with codecs.open('all_in_one.txt', 'w', 'utf-8') as output_file:
             output_file.write('\n')
             continue
 
-        pinyin_sub = re.sub(u'[\xb7\uff0e\uff10-\uff19]', '', pinyin_list[idx])
+        pinyin_sub_before = re.sub(u'[\xb7\uff0e\uff10-\uff19]', '', pinyin_list[idx])
+        pinyin_sub = re.sub(u'[^\u0061-\u007A0-9]', '', pinyin_sub_before)
+
+
         char_sub = re.sub(u'[^\u4e00-\u9fa5]', '', character_list[idx])
 
         pinyin = [x for x in re.split(ur'\d', pinyin_sub)[:-1] if x != '']
+
+        # print pinyin
+        # exit()
 
         char = list(char_sub)
         if len(pinyin) == 0 or len(pinyin) != len(char):
             continue
 
         pinyin = [x if x in pinyin_table else 'ERROR ' + x for x in pinyin]
+
+        # print pinyin
+        # exit()
 
         z = zip(pinyin, char)
         output_file.write(' '.join(map(lambda x: x[0] + '/' + x[1], z)) + ' ')
