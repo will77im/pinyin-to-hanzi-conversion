@@ -124,5 +124,6 @@ class HMM(object):
 
 if __name__ == "__main__":
     # opts, args = getopt.getopt(sys.argv[1:], '')
-    hmm = HMM('all_in_one.txt')
+    # hmm = HMM('all_in_one.txt')
+    hmm = HMM('trainset.txt')
     hmm.process()

@@ -85,8 +85,13 @@ class ViterbiDecoder(object):
             pinyin = pinyin_list[idx]
             back = ""
 
+            # if pinyin not in self.pinyin_hanzi:
+            #     return '-'
+
             for cur_hanzi in self.pinyin_hanzi[pinyin]:
                 cur_max_prob = -float('Inf')
+                # print cur_hanzi
+
                 e = self.emission_prob[cur_hanzi][pinyin]
 
                 for pre_hanzi in pre_hanzi_list:

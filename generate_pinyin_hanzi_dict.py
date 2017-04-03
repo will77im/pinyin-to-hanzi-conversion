@@ -2,7 +2,8 @@ pinyin_hanzi = {}
 
 count = 0
 
-with open('all_in_one.txt') as input_file:
+with open('trainset.txt') as input_file:
+# with open('all_in_one.txt') as input_file:
     for lines in input_file:
         items = lines.strip().split()
         for p_h in items:
