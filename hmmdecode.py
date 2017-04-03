@@ -8,6 +8,7 @@
 import sys
 import getopt
 import json
+import math
 
 
 class ViterbiDecoder(object):
@@ -18,6 +19,7 @@ class ViterbiDecoder(object):
         self.target_file_name = target_file_name
         self.all_tags = []
         self.pinyin_hanzi = {}
+        self.total_hanzi = 0.0
 
     def recursive_encode(self, obj):
         if isinstance(obj, dict):
@@ -33,6 +35,7 @@ class ViterbiDecoder(object):
         self.emission_prob = self.recursive_encode(self.emission_prob)
 
     def read_pinyin_hanzi_dict(self):
+        s = set()
         with open('pinyin_hanzi.txt') as pinyin_hanzi_file:
             for lines in pinyin_hanzi_file:
                 items = lines.strip().split('\t')
@@ -40,8 +43,9 @@ class ViterbiDecoder(object):
                 hanzi = items[1].split()
                 self.pinyin_hanzi[pinyin] = hanzi
 
-                # print self.pinyin_hanzi
-                # exit()
+                for w in hanzi:
+                    s.add(w)
+        self.total_hanzi = float(len(hanzi))
 
     def load_model(self):
         with open("hmmmodel.txt") as model_file:
@@ -86,13 +90,20 @@ class ViterbiDecoder(object):
                 e = self.emission_prob[cur_hanzi][pinyin]
 
                 for pre_hanzi in pre_hanzi_list:
-                    if pre_hanzi not in self.transition_prob:
-                        print pre_hanzi
 
+                    # try:
+                    if pre_hanzi in self.transition_prob and cur_hanzi in self.transition_prob[pre_hanzi]:
+                        trans_prob = self.transition_prob[pre_hanzi][cur_hanzi]
+                    elif pre_hanzi in self.transition_prob:
+                        trans_prob = math.log(1 / self.transition_prob[pre_hanzi]['total'])
+                    else:
+                        trans_prob = math.log(1 / self.total_hanzi)
 
-                    trans_prob = 1 / self.transition_prob[pre_hanzi]['total'] if cur_hanzi not in self.transition_prob[
-                        pre_hanzi] else self.transition_prob[pre_hanzi][cur_hanzi]
-
+                    # print trans_prob
+                    # trans_prob = math.log(trans_prob)
+                    # except:
+                    #     print pre_hanzi
+                    #     exit()
 
                     prob = prob_matrix[idx - 1][pre_hanzi] + trans_prob
 
@@ -105,23 +116,11 @@ class ViterbiDecoder(object):
                 backpointer[idx - 1][cur_hanzi] = back
                 prob_matrix[idx][cur_hanzi] = cur_max_prob
 
-            # for cur_tag in self.all_tags:
-            #     cur_max_prob = -float('Inf')
-            #
-            #     e = -1000000 if word not in self.emission_prob[cur_tag] else self.emission_prob[cur_tag][word]
-            #
-            #     for pre_tag in self.all_tags:
-            #
-            #         prob = prob_matrix[idx - 1][pre_tag] + self.transition_prob[pre_tag][cur_tag]
-            #         if prob > cur_max_prob:
-            #             cur_max_prob = prob
-            #             back = pre_tag
-            #     cur_max_prob += e
-            #
-            #     backpointer[idx - 1][cur_tag] = back
-            #     prob_matrix[idx][cur_tag] = cur_max_prob
-
             pre_hanzi_list = self.pinyin_hanzi[pinyin]
+
+        # for b in backpointer:
+        #     print ' '.join([x for x in b])
+        #     print
 
         max_tuple = max([(prob_matrix[-1][tag], tag) for tag in prob_matrix[-1]])
         res = self.backtrack(pinyin_list, backpointer, max_tuple[1])
@@ -129,6 +128,7 @@ class ViterbiDecoder(object):
         return res
 
     def viterbi_decode(self):
+        i = 0
         with open(self.target_file_name) as target_file:
             with open("hmmoutput.txt", 'w') as output_file:
                 for lines in target_file:
@@ -137,9 +137,13 @@ class ViterbiDecoder(object):
                     for w in words:
                         pinyin.append(w.split('/')[0])
                     res = self.sub_decode(pinyin)
-                    print res
 
-                    exit()
+                    i += 1
+                    # print res
+                    # if i == 10:
+
+
+                        # exit()
                     output_file.write(res + '\n')
 
     def process(self):
@@ -152,4 +156,5 @@ if __name__ == "__main__":
     # opts, args = getopt.getopt(sys.argv[1:], '')
     # decoder = ViterbiDecoder(args[0])
     decoder = ViterbiDecoder('testset.txt')
+    # decoder = ViterbiDecoder('trainset.txt')
     decoder.process()
