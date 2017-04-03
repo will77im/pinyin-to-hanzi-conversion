@@ -38,7 +38,6 @@ def extract_from_xml(root_dir, l):
         for sentence in all_sentence:
             for pinyin_word in sentence.findall('w'):
                 l.append(pinyin_word.text)
-
             l.append('EOS')
 
     os.chdir(current_dic)
