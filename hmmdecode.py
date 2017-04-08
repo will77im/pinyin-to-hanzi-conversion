@@ -71,6 +71,8 @@ class ViterbiDecoder(object):
 
         prob_matrix[0] = {}
         first_pinyin = pinyin_list[0]
+        if first_pinyin not in self.pinyin_hanzi:
+            return '-'
 
         pre_hanzi_list = self.pinyin_hanzi[first_pinyin]
 
@@ -84,9 +86,8 @@ class ViterbiDecoder(object):
             backpointer[idx - 1] = {}
             pinyin = pinyin_list[idx]
             back = ""
-
-            # if pinyin not in self.pinyin_hanzi:
-            #     return '-'
+            if pinyin not in self.pinyin_hanzi:
+                return '-'
 
             for cur_hanzi in self.pinyin_hanzi[pinyin]:
                 cur_max_prob = -float('Inf')
@@ -104,12 +105,6 @@ class ViterbiDecoder(object):
                     else:
                         trans_prob = math.log(1 / self.total_hanzi)
 
-                    # print trans_prob
-                    # trans_prob = math.log(trans_prob)
-                    # except:
-                    #     print pre_hanzi
-                    #     exit()
-
                     prob = prob_matrix[idx - 1][pre_hanzi] + trans_prob
 
                     if prob > cur_max_prob:
@@ -122,10 +117,6 @@ class ViterbiDecoder(object):
                 prob_matrix[idx][cur_hanzi] = cur_max_prob
 
             pre_hanzi_list = self.pinyin_hanzi[pinyin]
-
-        # for b in backpointer:
-        #     print ' '.join([x for x in b])
-        #     print
 
         max_tuple = max([(prob_matrix[-1][tag], tag) for tag in prob_matrix[-1]])
         res = self.backtrack(pinyin_list, backpointer, max_tuple[1])
@@ -148,7 +139,7 @@ class ViterbiDecoder(object):
                     # if i == 10:
 
 
-                        # exit()
+                    # exit()
                     output_file.write(res + '\n')
 
     def process(self):
