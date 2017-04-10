@@ -17,22 +17,10 @@ class HMM(object):
         self.train_file_name = input
         self.emission_prob = {}
         self.transition_prob = {}
-        # self.initial_prob = {'DI': 1, 'DD': 1, 'DA': 1, 'WW': 1, 'FF': 1, 'DT': 1, 'DR': 1, 'DP': 1, 'PR': 1, 'PP': 1,
-        #                      'PT': 1, 'PX': 1, 'NC': 1, 'RG': 1, 'PD': 1, 'NP': 1, 'RN': 1, 'PI': 1, 'VA': 1, 'P0': 1,
-        #                      'CC': 1, 'VM': 1, 'AO': 1, 'AQ': 1, 'VS': 1, 'ZZ': 1, 'CS': 1, 'II': 1, 'SP': 1,
-        #                      'total': 29.0}
-        # self.transition_prob_template = {'DI': 1, 'DD': 1, 'DA': 1, 'WW': 1, 'FF': 1, 'DT': 1, 'DR': 1, 'DP': 1,
-        #                                  'PR': 1, 'PP': 1,
-        #                                  'PT': 1, 'PX': 1, 'NC': 1, 'RG': 1, 'PD': 1, 'NP': 1, 'RN': 1, 'PI': 1,
-        #                                  'VA': 1, 'P0': 1,
-        #                                  'CC': 1, 'VM': 1, 'AO': 1, 'AQ': 1, 'VS': 1, 'ZZ': 1, 'CS': 1, 'II': 1,
-        #                                  'SP': 1,
-        #                                  'total': 29.0}
 
         self.initial_prob = {}
         self.transition_prob_template = {}
         self.total = 0.0
-        # self.transition_prob
 
     def read_all_characters(self):
         self.initial_prob['total'] = 0.0
@@ -65,7 +53,7 @@ class HMM(object):
                     continue
                 self.transition_prob[tag][trans_tag] = math.log(
                     self.transition_prob[tag][trans_tag] / self.transition_prob[tag]["total"])
-            # del self.transition_prob[tag]["total"]
+                # del self.transition_prob[tag]["total"]
 
         for tag in self.emission_prob:
             for word in self.emission_prob[tag]:
