@@ -25,6 +25,7 @@ can
 cang
 cao
 ce
+cen
 ceng
 cha
 chai
@@ -38,6 +39,7 @@ chi
 chong
 chou
 chu
+chua
 chuai
 chuan
 chuang
@@ -58,8 +60,11 @@ dan
 dang
 dao
 de
+den
+dei
 deng
 di
+dia
 dian
 diao
 die
@@ -73,7 +78,9 @@ dui
 dun
 duo
 e
+ei
 en
+eng
 er
 fa
 fan
@@ -133,7 +140,6 @@ jing
 jiong
 jiu
 ju
-jv
 juan
 jue
 jun
@@ -178,8 +184,10 @@ lu
 lv
 luan
 lue
+lve
 lun
 luo
+m
 ma
 mai
 man
@@ -208,6 +216,7 @@ ne
 nei
 nen
 neng
+ng
 ni
 nian
 niang
@@ -221,8 +230,9 @@ nou
 nu
 nv
 nuan
-nue
+nve
 nuo
+nun
 o
 ou
 pa
@@ -247,7 +257,6 @@ qia
 qian
 qiang
 qiao
-qie
 qie
 qin
 qing
@@ -285,6 +294,7 @@ shan
 shang
 shao
 she
+shei
 shen
 sheng
 shi
@@ -377,6 +387,7 @@ zhan
 zhang
 zhao
 zhe
+zhei
 zhen
 zheng
 zhi
@@ -398,11 +409,3 @@ zuan
 zui
 zun
 zuo
-cen
-luu
-nuu
-shei
-dia
-uuan
-lyi
-lwan
