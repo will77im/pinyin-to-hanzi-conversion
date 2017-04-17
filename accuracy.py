@@ -1,5 +1,16 @@
-HMM_OUTPUT_FILE = 'testset2.txt'
-TEST_SET_FILE = 'testset.txt'
+HMM_OUTPUT_FILE = 'data/'
+TEST_SET_FILE = 'data/'
+
+
+def correct_hmm_output(hmm_line, test_line):
+    hmm_p_h = [l.split('/') for l in hmm_line.strip().split(' ')]
+    out_p_h = [l.split('/') for l in test_line.strip().split(' ')]
+    for i in range(len(out_p_h)):
+        while hmm_p_h[i][0] != out_p_h[i][0]:
+            hmm_p_h[i] = [hmm_p_h[i][0] + hmm_p_h[i+1][0], hmm_p_h[i][1] + hmm_p_h[i+1][1]]
+            del hmm_p_h[i+1]
+    return hmm_p_h, out_p_h
+
 
 def find_accuracy():
     total_words = 0
@@ -12,12 +23,13 @@ def find_accuracy():
         for i in range(len(lines1)):
             if len(lines1[i].strip()) == 0:
                 continue
-            pinyin_hanzi1 = [l.split('/')[1] for l in lines1[i].strip().split(' ')]
-            pinyin_hanzi2 = [l.split('/')[1] for l in lines2[i].strip().split(' ')]
+            pinyin_hanzi1, pinyin_hanzi2 = correct_hmm_output(lines1[i], lines2[i])
+            hanzi1 = [l[1] for l in pinyin_hanzi1]
+            hanzi2 = [l[1] for l in pinyin_hanzi2]
             sentence_incorrect = False
-            for j in range(len(pinyin_hanzi1)):
+            for j in range(len(hanzi1)):
                 total_words += 1
-                if pinyin_hanzi1[j] == pinyin_hanzi2[j]:
+                if hanzi1[j] == hanzi2[j]:
                     correct_words += 1
                 else:
                     sentence_incorrect = True
