@@ -10,6 +10,7 @@ import math
 import copy
 import json
 import getopt
+import cPickle
 
 
 class HMM(object):
@@ -25,7 +26,7 @@ class HMM(object):
     def read_all_characters(self):
         self.initial_prob['total'] = 0.0
         # self.transition_prob_template['total'] = 0.0
-        with open('pinyin_hanzi.txt') as pinyin_hanzi_file:
+        with open('data/pinyin_hanzi.txt') as pinyin_hanzi_file:
             for lines in pinyin_hanzi_file:
                 chars = lines.strip().split('\t')[1].split()
                 for char in chars:
@@ -99,8 +100,9 @@ class HMM(object):
 
     def output_model(self):
         model = [self.initial_prob, self.transition_prob, self.emission_prob]
-        output_file = open("hmmmodel.txt", 'w')
+        output_file = open("data/hmmmodel.txt", 'w')
         json.dump(model, output_file, ensure_ascii=False, indent=4)
+        # cPickle.dump(model, output_file)
         output_file.close()
 
     def process(self):
@@ -113,5 +115,5 @@ class HMM(object):
 if __name__ == "__main__":
     # opts, args = getopt.getopt(sys.argv[1:], '')
     # hmm = HMM('all_in_one.txt')
-    hmm = HMM('trainset.txt')
+    hmm = HMM('data/trainset.txt')
     hmm.process()
