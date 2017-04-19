@@ -1,17 +1,9 @@
 # -*- coding: utf-8 -*-
 
-# date: 03/10/17
-# author: Guocheng Chen
-# email: guochenc@usc.edu
-# description: pos tagger with Viterbi algorithm
-
-import sys
-import getopt
 import json
 import math
-import segment2
 import time
-import cPickle
+import codecs
 
 
 class ViterbiDecoder(object):
@@ -20,27 +12,17 @@ class ViterbiDecoder(object):
         self.transition_prob = {}
         self.initial_prob = {}
         self.target_file_name = target_file_name
-        self.all_tags = []
+        # self.all_tags = []
         self.pinyin_hanzi = {}
         self.total_hanzi = 0.0
         self.all_pinyin = {}
-        self.yuanyin = set(['i', 'u', 'v'])
-
-    def recursive_encode(self, obj):
-        if isinstance(obj, dict):
-            return {self.recursive_encode(key): self.recursive_encode(value) for key, value in obj.iteritems()}
-        elif isinstance(obj, unicode):
-            return obj.encode('utf-8')
-        else:
-            return obj
-
-    def encode2utf(self):
-        self.initial_prob = self.recursive_encode(self.initial_prob)
-        self.transition_prob = self.recursive_encode(self.transition_prob)
-        self.emission_prob = self.recursive_encode(self.emission_prob)
+        self.yuanyin = set([u'i', u'u', u'v'])
+        # self.grams = {}
+        self.unigram = {}
+        self.train_corpus_len = 0
 
     def read_all_pinyin(self):
-        with open('data/pinyin.txt') as pinyin_file:
+        with codecs.open('data/pinyin.txt', encoding='utf-8') as pinyin_file:
             for lines in pinyin_file:
                 pinyin = lines.strip()
                 pinyin_list = list(pinyin)
@@ -49,32 +31,24 @@ class ViterbiDecoder(object):
                     self.all_pinyin[first_letter] = set()
                 self.all_pinyin[first_letter].add(pinyin)
 
-        # exit()
-
     def read_pinyin_hanzi_dict(self):
-        s = set()
-        with open('data/pinyin_hanzi.txt') as pinyin_hanzi_file:
+        with codecs.open('data/pinyin_hanzi.txt', encoding='utf-8') as pinyin_hanzi_file:
             for lines in pinyin_hanzi_file:
                 items = lines.strip().split('\t')
                 pinyin = items[0]
                 hanzi = items[1].split()
                 self.pinyin_hanzi[pinyin] = hanzi
 
-                for w in hanzi:
-                    s.add(w)
-        self.total_hanzi = float(len(hanzi))
-
     def load_model(self):
-        with open("data/hmmmodel.txt") as model_file:
-            model = json.load(model_file)
-            # model = cPickle.load(model_file)
-            self.initial_prob = model[0]
-            self.transition_prob = model[1]
-            self.emission_prob = model[2]
-            # print self.initial_prob
-            # exit()
-            self.encode2utf()
-            self.all_tags = [tag for tag in self.initial_prob]
+        with open("data/hmmmodel.txt") as model_file, open('data/word_counts.txt') as grams_file:
+            hmm_model = json.load(model_file)
+            # model = yaml.load(model_file)
+            self.initial_prob = hmm_model[0]
+            self.transition_prob = hmm_model[1]
+            self.emission_prob = hmm_model[2]
+
+            self.unigram = json.load(grams_file)['1']
+            self.train_corpus_len = self.transition_prob['len']
 
     def backtrack(self, words, backpointer, last_tag):
         sequence = [None] * len(words)
@@ -97,7 +71,6 @@ class ViterbiDecoder(object):
         pre_hanzi_list = self.pinyin_hanzi[first_pinyin]
 
         for hanzi in self.pinyin_hanzi[first_pinyin]:
-            # print hanzi
             e = self.emission_prob[hanzi][first_pinyin]
             prob_matrix[0][hanzi] = self.initial_prob[hanzi] + e
 
@@ -111,21 +84,21 @@ class ViterbiDecoder(object):
 
             for cur_hanzi in self.pinyin_hanzi[pinyin]:
                 cur_max_prob = -float('Inf')
-                # print cur_hanzi
 
                 e = self.emission_prob[cur_hanzi][pinyin]
 
                 for pre_hanzi in pre_hanzi_list:
+                    if pre_hanzi not in self.transition_prob:
+                        self.transition_prob[pre_hanzi] = {}
+                    if cur_hanzi not in self.transition_prob[pre_hanzi]:
+                        if pre_hanzi in self.unigram:
+                            self.transition_prob[pre_hanzi][cur_hanzi] = math.log(
+                                0.4 * self.unigram[pre_hanzi] / self.train_corpus_len)
+                        else:
+                            self.transition_prob[pre_hanzi][cur_hanzi] = math.log(1 / self.train_corpus_len)
 
-                    # try:
-                    if pre_hanzi in self.transition_prob and cur_hanzi in self.transition_prob[pre_hanzi]:
-                        trans_prob = self.transition_prob[pre_hanzi][cur_hanzi]
-                    elif pre_hanzi in self.transition_prob:
-                        trans_prob = math.log(1 / self.transition_prob[pre_hanzi]['total'])
-                    else:
-                        trans_prob = math.log(1 / self.total_hanzi)
-
-                    prob = prob_matrix[idx - 1][pre_hanzi] + trans_prob
+                    # prob = prob_matrix[idx - 1][pre_hanzi] + trans_prob
+                    prob = prob_matrix[idx - 1][pre_hanzi] + self.transition_prob[pre_hanzi][cur_hanzi]
 
                     if prob > cur_max_prob:
                         cur_max_prob = prob
@@ -145,8 +118,8 @@ class ViterbiDecoder(object):
 
     def viterbi_decode(self):
         i = 0
-        with open(self.target_file_name) as target_file:
-            with open("data/hmmoutput.txt", 'w') as output_file:
+        with codecs.open(self.target_file_name,encoding='utf-8') as target_file:
+            with codecs.open("data/hmmoutput.txt", 'w', encoding='utf-8') as output_file:
                 for lines in target_file:
                     words = lines.strip().split()
                     pinyin = []
@@ -155,13 +128,12 @@ class ViterbiDecoder(object):
                     if len(pinyin) == 0:
                         continue
 
-                    # pinyin = [p if p in self.pinyin_hanzi else segment.seg(p) for p in pinyin]
                     target_pinyin = []
                     for p in pinyin:
                         if p in self.pinyin_hanzi:
                             target_pinyin.append(p)
                         else:
-                            target_pinyin.extend(self.seg(p))
+                            target_pinyin.extend(self.segment_pinyin(p))
 
                     # print target_pinyin
                     res = self.sub_decode(target_pinyin)
@@ -169,12 +141,10 @@ class ViterbiDecoder(object):
                     i += 1
                     output_file.write(res + '\n')
 
-    def seg(self, source):
-        # print 'into', source
+    def segment_pinyin(self, source):
         resultList = []
         begin = 0
         sourceLen = len(source)
-        # print type(pyzhDict['n'])
 
         last = ''
         while begin < sourceLen:
@@ -197,14 +167,13 @@ class ViterbiDecoder(object):
             resultList.append(temp)
             last = temp
             begin += step
-        # result = ' '.join(resultList)
-        # print 'success'
         return resultList
 
     def process(self):
         self.read_pinyin_hanzi_dict()
         self.read_all_pinyin()
         start = time.time()
+
         self.load_model()
         end = time.time()
         print end - start
@@ -212,8 +181,5 @@ class ViterbiDecoder(object):
 
 
 if __name__ == "__main__":
-    # opts, args = getopt.getopt(sys.argv[1:], '')
-    # decoder = ViterbiDecoder(args[0])
     decoder = ViterbiDecoder('data/testset.txt')
-    # decoder = ViterbiDecoder('trainset.txt')
     decoder.process()

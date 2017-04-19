@@ -35,33 +35,40 @@ def extract_from_xml(root_dir, l):
             l.append('EOS')
 
 
-read_all_pinyin()
+def write_output():
 
-extract_from_xml(pinyin_root_dir, pinyin_list)
-extract_from_xml(character_root_dir, character_list)
+    flag = False
+    with codecs.open('data/all_in_one.txt', 'w', 'utf-8') as output_file:
+        i = 0
+        for idx in range(len(pinyin_list)):
+            if pinyin_list[idx] == 'EOS' and flag:
+                flag = False
+                output_file.write('\n')
+                continue
 
-flag = False
-with codecs.open('all_in_one.txt', 'w', 'utf-8') as output_file:
-    i = 0
-    for idx in range(len(pinyin_list)):
-        if pinyin_list[idx] == 'EOS' and flag:
-            flag = False
-            output_file.write('\n')
-            continue
+            pinyin_sub_before = re.sub(u'[\xb7\uff0e\uff10-\uff190-9]', '', pinyin_list[idx])
+            pinyin_sub = re.sub(u'[^\u0061-\u007A0-9]', '', pinyin_sub_before)
 
-        pinyin_sub_before = re.sub(u'[\xb7\uff0e\uff10-\uff19]', '', pinyin_list[idx])
-        pinyin_sub = re.sub(u'[^\u0061-\u007A0-9]', '', pinyin_sub_before)
+            char_sub = re.sub(u'[^\u4e00-\u9fa5]', '', character_list[idx])
 
-        char_sub = re.sub(u'[^\u4e00-\u9fa5]', '', character_list[idx])
+            # pinyin = [x for x in re.split(ur'\d', pinyin_sub)[:-1] if x != '']
 
-        pinyin = [x for x in re.split(ur'\d', pinyin_sub)[:-1] if x != '']
+            # char = list(char_sub)
+            # if len(pinyin) == 0 or len(pinyin) != len(char):
+            #     continue
+            #
+            # pinyin = [x if x in pinyin_table else 'ERROR ' + x for x in pinyin]
 
-        char = list(char_sub)
-        if len(pinyin) == 0 or len(pinyin) != len(char):
-            continue
+            # z = zip(pinyin_sub, char)
+            if len(pinyin_sub) == 0 or len(char_sub) == 0:
+                continue
+            output_file.write(pinyin_sub + '/' + char_sub + ' ')
+            flag = True
 
-        pinyin = [x if x in pinyin_table else 'ERROR ' + x for x in pinyin]
 
-        z = zip(pinyin, char)
-        output_file.write(' '.join(map(lambda x: x[0] + '/' + x[1], z)) + ' ')
-        flag = True
+def process():
+    read_all_pinyin()
+
+    extract_from_xml(pinyin_root_dir, pinyin_list)
+    extract_from_xml(character_root_dir, character_list)
+    write_output()

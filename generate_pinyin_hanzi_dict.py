@@ -23,3 +23,7 @@ def generate_dict():
             t = [w for w, y in sorted(pinyin_hanzi[pinyin].iteritems(), key=lambda x: x[1], reverse=True)]
 
             output_file.write(' '.join(t) + '\n')
+
+
+if __name__ == "__main__":
+    generate_dict()
