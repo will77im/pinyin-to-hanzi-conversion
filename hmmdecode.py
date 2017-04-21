@@ -20,6 +20,7 @@ class ViterbiDecoder(object):
         # self.grams = {}
         self.unigram = {}
         self.train_corpus_len = 0
+        self.unknown_pinyin = {}
 
     def read_all_pinyin(self):
         with codecs.open('data/pinyin.txt', encoding='utf-8') as pinyin_file:
@@ -142,6 +143,8 @@ class ViterbiDecoder(object):
                     output_file.write(res + '\n')
 
     def segment_pinyin(self, source):
+        if source in self.unknown_pinyin:
+            return self.unknown_pinyin[source]
         resultList = []
         begin = 0
         sourceLen = len(source)
@@ -167,6 +170,7 @@ class ViterbiDecoder(object):
             resultList.append(temp)
             last = temp
             begin += step
+        self.unknown_pinyin[source] = resultList
         return resultList
 
     def process(self):
