@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import json
 import math
 import time
@@ -9,22 +8,17 @@ def add_reverse(l,words):
     for i in list(reversed(words)):
         l.append(i)
 def split_words(pinyin_list, hanzis, n):
-
     res = []
     end  = n-1 
-
     for i in range(0,end):
         hanzi = hanzis[i]
         pinyin = pinyin_list[i]
         str = hanzi+'/'+pinyin
         res.append(str)
-
     hanzi = hanzis[n-1:]
     pinyin = pinyin_list[n-1]
     str = hanzi+'/'+pinyin
-
     res.append(str)
-
     return res
 class ViterbiDecoder(object):
     def __init__(self, target_file_name):
@@ -32,12 +26,10 @@ class ViterbiDecoder(object):
         self.transition_prob = {}
         self.initial_prob = {}
         self.target_file_name = target_file_name
-        # self.all_tags = []
         self.pinyin_hanzi = {}
         self.total_hanzi = 0.0
         self.all_pinyin = {}
         self.yuanyin = set([u'i', u'u', u'v'])
-        # self.grams = {}
         self.unigram = {}
         self.train_corpus_len = 0
         self.unknown_pinyin = {}
@@ -65,7 +57,6 @@ class ViterbiDecoder(object):
             print 'loading json'
             hmm_model = json.load(model_file)
             print 'json is loaded'
-            # model = yaml.load(model_file)
             self.initial_prob = hmm_model[0]
             print 'json is loaded'
             self.transition_prob = hmm_model[1]
@@ -77,7 +68,6 @@ class ViterbiDecoder(object):
 
 
     def backtrack(self, words, backpointer, last_tag,hanzi_at_loc):
-        #print last_tag
         end = len(words)-1
         idx = end
         pre_tag = last_tag
@@ -86,41 +76,20 @@ class ViterbiDecoder(object):
         idx -= hanzi_at_loc[idx][last_tag]
         w = split_words(words[len(words)-last_n:],pre_tag,last_n)
         add_reverse(l,w)
-
-
         while idx >= 0:
-            #print 'pre is ',pre_tag
             tmp = pre_tag
             pre_tag = backpointer[idx][pre_tag]
             step = hanzi_at_loc[idx][pre_tag]
-            #print pre_tag
             w = split_words(words[idx-step+1:idx+1],pre_tag,step)
             add_reverse(l,w)
-            '''
-            for i in hanzi_at_loc[idx]:
-                print i,hanzi_at_loc[idx][i]
-            '''
             idx -= step
         res = ''
         for i in reversed(l):
             res += i + ' '
         res = res.strip()
-
         return res
-        '''
-        sequence = [None] * len(words)
-        sequence[-1] = last_tag
-        pre_tag = last_tag
-        for idx in range(len(words) - 2, -1, -1):
-            pre_tag = backpointer[idx][pre_tag]
-            sequence[idx] = pre_tag
-        return ' '.join(map(lambda x: x[0] + '/' + x[1], zip(words, sequence)))
-        '''
     def sub_decode(self, pinyin_list):
-        #print pinyin_list
         backpointer = [{} for i in range(len(pinyin_list))]
-        #prob_matrix = [None] * len(pinyin_list)
-        #print pinyin_list
         prob_matrix = [{} for i in range(len(pinyin_list))]
         pinyin_at_loc = {}
         hanzi_at_loc = [{} for i in range(len(pinyin_list))]
@@ -178,10 +147,7 @@ class ViterbiDecoder(object):
                                     self.transition_prob[pre_hanzi][cur_hanzi] = math.log(
                                         0.4 * self.unigram[pre_hanzi] / self.train_corpus_len)
                                 else:
-                                    self.transition_prob[pre_hanzi][cur_hanzi] = math.log(1 / self.train_corpus_len)
-
-                    # prob = prob_matrix[idx - 1][pre_hanzi] + trans_prob
-                            
+                                    self.transition_prob[pre_hanzi][cur_hanzi] = math.log(1 / self.train_corpus_len)         
                             prob = prob_matrix[idx - n][pre_hanzi] 
                             prob += self.transition_prob[pre_hanzi][cur_hanzi]
                             if prob > cur_max_prob:
@@ -192,9 +158,6 @@ class ViterbiDecoder(object):
                         prob_matrix[idx][cur_hanzi] = cur_max_prob
                         t = idx-n
                         backpointer[t][cur_hanzi] = back
-
-            
-
         max_tuple = max([(prob_matrix[-1][tag], tag) for tag in prob_matrix[-1]])
         res = self.backtrack(pinyin_list, backpointer, max_tuple[1],hanzi_at_loc)
         return res
@@ -203,7 +166,7 @@ class ViterbiDecoder(object):
         i = 0
         line_count = 0
         with codecs.open(self.target_file_name,encoding='utf-8') as target_file:
-            with codecs.open("data/hmmoutput3.txt", 'w', encoding='utf-8') as output_file:
+            with codecs.open("data/hmmoutput_c.txt", 'w', encoding='utf-8') as output_file:
                 for lines in target_file:
                     line_count += 1
                     words = lines.strip().split()
@@ -214,18 +177,13 @@ class ViterbiDecoder(object):
                         pinyin.append(s)
                     if len(pinyin) == 0:
                         continue
-
                     target_pinyin = []
                     for p in pinyin:
                         if p in self.pinyin_hanzi:
                             target_pinyin.append(p)
                         else:
-                            #target_pinyin.extend(self.segment_pinyin(p))
                             pass
-                    # print target_pinyin
                     res = self.sub_decode(target_pinyin)
-
-      
                     output_file.write(res + '\n')
                     if line_count % 10 == 0:
                         print line_count
@@ -244,4 +202,3 @@ class ViterbiDecoder(object):
 if __name__ == "__main__":
     decoder = ViterbiDecoder('data/sample.txt')
     decoder.process()
-    #decoder.process()
