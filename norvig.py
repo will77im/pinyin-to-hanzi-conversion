@@ -8,6 +8,7 @@ from collections import Counter
 class Norvig(object):
 
     WORDS = {}
+    WORD_BIGRAMS = {}
 
     def __init__(self, input_file):
         self.create_word_dict(input_file)
@@ -15,9 +16,21 @@ class Norvig(object):
     def words(self, text):
         return re.findall(r'\w+', text.lower())
 
-    def create_word_dict(self, input_file):
+    def create_word_dict(self, input_file, bigrams=True):
         with open(input_file, 'r') as in_file:
             self.WORDS = Counter(self.words(in_file.read()))
+            if bigrams:
+                in_file.seek(0)
+                lines = in_file.read().splitlines()
+                for line in lines:
+                    words = line.strip().split(' ')
+                    for i in range(len(words) - 1):
+                        if words[i] not in self.WORD_BIGRAMS:
+                            self.WORD_BIGRAMS[words[i]] = {}
+                        if words[i+1] not in self.WORD_BIGRAMS[words[i]]:
+                            self.WORD_BIGRAMS[words[i]][words[i+1]] = 1
+                        else:
+                            self.WORD_BIGRAMS[words[i]][words[i+1]] += 1
 
     def P(self, word, N=sum(WORDS.values())):
         "Probability of `word`."
@@ -48,3 +61,26 @@ class Norvig(object):
     def edits2(self, word):
         "All edits that are two edits away from `word`."
         return (e2 for e1 in self.edits1(word) for e2 in self.edits1(e1))
+
+    def correct_typo(self, word, prev_word=None, next_word=None):
+        candidates = self.candidates(word)
+        if word in candidates:
+            return word
+        if (prev_word is None and next_word is None) or len(self.WORD_BIGRAMS) == 0:
+            highest_freq = 0
+            best_word = word
+            for w in candidates:
+                if self.WORDS[w] > highest_freq:
+                    highest_freq = self.WORDS[w]
+                    best_word = w
+            return best_word
+        freqs = dict.fromkeys(candidates, 0)
+        if prev_word is not None:
+            for cur_word in candidates:
+                if prev_word in self.WORD_BIGRAMS and cur_word in self.WORD_BIGRAMS[prev_word]:
+                    freqs[cur_word] = self.WORD_BIGRAMS[prev_word][cur_word]
+        if next_word is not None:
+            for cur_word in candidates:
+                if cur_word in self.WORD_BIGRAMS and next_word in self.WORD_BIGRAMS[cur_word]:
+                    freqs[cur_word] += self.WORD_BIGRAMS[cur_word][next_word]
+        return max(freqs, key=freqs.get)
