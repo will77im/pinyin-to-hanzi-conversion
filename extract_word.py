@@ -29,10 +29,26 @@ def extract_from_xml(root_dir, l):
         root = tree.getroot()
         all_sentence = root.iter('s')
 
+        word_count = 0
+        skip = False
         for sentence in all_sentence:
-            for pinyin_word in sentence.findall('w'):
-                l.append(pinyin_word.text)
-            l.append('EOS')
+            temp_list = []
+            for word in sentence:
+                if word.tag == 'c' and word_count > 0:
+                    temp_list.append('EOS')
+                    word_count = 0
+                elif word.tag == 'w':
+                    if u'\xb7' in word.text:
+                        skip = True
+                        break
+                    temp_list.append(word.text)
+                    word_count += 1
+            if skip:
+                skip = False
+                continue
+            if word_count > 0:
+                temp_list.append('EOS')
+            l += temp_list
 
 
 def write_output():
@@ -40,13 +56,27 @@ def write_output():
     flag = False
     with codecs.open('data/all_in_one.txt', 'w', 'utf-8') as output_file:
         i = 0
+        goto_eos = False
+        sentence = ''
         for idx in range(len(pinyin_list)):
-            if pinyin_list[idx] == 'EOS' and flag:
-                flag = False
-                output_file.write('\n')
+            if pinyin_list[idx] == 'EOS':
+                if flag:
+                    output_file.write(sentence + '\n')
+                    flag = False
+                if goto_eos:
+                    goto_eos = False
+                sentence = ''
                 continue
 
-            pinyin_sub_before = re.sub(u'[\xb7\uff0e\uff10-\uff190-9]', '', pinyin_list[idx])
+            if goto_eos:
+                continue
+
+            if bool(re.search(ur'[A-Za-z0-9\u0061-\u007A]', character_list[idx])):
+                flag = False
+                goto_eos = True
+                continue
+
+            pinyin_sub_before = re.sub(u'[\xb7\uff0e\uff10-\uff19]', '', pinyin_list[idx])
             pinyin_sub = re.sub(u'[^\u0061-\u007A0-9]', '', pinyin_sub_before)
 
             char_sub = re.sub(u'[^\u4e00-\u9fa5]', '', character_list[idx])
@@ -62,7 +92,7 @@ def write_output():
             # z = zip(pinyin_sub, char)
             if len(pinyin_sub) == 0 or len(char_sub) == 0:
                 continue
-            output_file.write(pinyin_sub + '/' + char_sub + ' ')
+            sentence += pinyin_sub + '/' + char_sub + ' '
             flag = True
 
 
@@ -72,3 +102,6 @@ def process():
     extract_from_xml(pinyin_root_dir, pinyin_list)
     extract_from_xml(character_root_dir, character_list)
     write_output()
+
+if __name__ == "__main__":
+    process()

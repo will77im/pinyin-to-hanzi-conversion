@@ -70,7 +70,7 @@ def write_output():
             if goto_eos:
                 continue
 
-            if bool(re.search(r'\w', character_list[idx])) or bool(re.search(r'\d', character_list[idx])):
+            if bool(re.search(ur'[A-Za-z0-9\u0061-\u007A]', character_list[idx])):
                 flag = False
                 goto_eos = True
                 continue
@@ -99,4 +99,5 @@ def process():
     extract_from_xml(character_root_dir, character_list)
     write_output()
 
-process()
+if __name__ == "__main__":
+    process()
