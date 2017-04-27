@@ -29,20 +29,50 @@ def extract_from_xml(root_dir, l):
         root = tree.getroot()
         all_sentence = root.iter('s')
 
+        word_count = 0
+        skip = False
         for sentence in all_sentence:
-            for pinyin_word in sentence.findall('w'):
-                l.append(pinyin_word.text)
-            l.append('EOS')
+            temp_list = []
+            for word in sentence:
+                if word.tag == 'c' and word_count > 0:
+                    temp_list.append('EOS')
+                    word_count = 0
+                elif word.tag == 'w':
+                    if u'\xb7' in word.text:
+                        skip = True
+                        break
+                    temp_list.append(word.text)
+                    word_count += 1
+            if skip:
+                skip = False
+                continue
+            if word_count > 0:
+                temp_list.append('EOS')
+            l += temp_list
 
 
 def write_output():
     flag = False
     with codecs.open('data/all_in_one.txt', 'w', 'utf-8') as output_file:
         i = 0
+        goto_eos = False
+        sentence = ''
         for idx in range(len(pinyin_list)):
-            if pinyin_list[idx] == 'EOS' and flag:
+            if pinyin_list[idx] == 'EOS':
+                if flag:
+                    output_file.write(sentence + '\n')
+                    flag = False
+                if goto_eos:
+                    goto_eos = False
+                sentence = ''
+                continue
+
+            if goto_eos:
+                continue
+
+            if bool(re.search(r'\w', character_list[idx])) or bool(re.search(r'\d', character_list[idx])):
                 flag = False
-                output_file.write('\n')
+                goto_eos = True
                 continue
 
             pinyin_sub_before = re.sub(u'[\xb7\uff0e\uff10-\uff19]', '', pinyin_list[idx])
@@ -59,7 +89,7 @@ def write_output():
             pinyin = [x if x in pinyin_table else 'ERROR ' + x for x in pinyin]
 
             z = zip(pinyin, char)
-            output_file.write(' '.join(map(lambda x: x[0] + '/' + x[1], z)) + ' ')
+            sentence += ' '.join(map(lambda x: x[0] + '/' + x[1], z)) + ' '
             flag = True
 
 
@@ -68,3 +98,5 @@ def process():
     extract_from_xml(pinyin_root_dir, pinyin_list)
     extract_from_xml(character_root_dir, character_list)
     write_output()
+
+process()
