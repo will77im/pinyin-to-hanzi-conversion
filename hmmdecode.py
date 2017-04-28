@@ -6,6 +6,7 @@ import time
 import codecs
 import cProfile
 import re
+import norvig
 
 
 class ViterbiDecoder(object):
@@ -26,6 +27,11 @@ class ViterbiDecoder(object):
         self.train_corpus_len_4 = 0
 
         self.ft = 0
+
+        self.norvig_obj = None
+        self.typo_correction = False
+        self.typo_bigram_prev = False
+        self.typo_bigram_next = False
 
     def read_all_pinyin(self):
         with codecs.open('data/pinyin.txt', encoding='utf-8') as pinyin_file:
@@ -79,7 +85,16 @@ class ViterbiDecoder(object):
         if first_pinyin not in self.pinyin_hanzi:
             # del backpointer[:]
             # del prob_matrix[:]
-            return '-'
+            if self.typo_correction and self.norvig_obj is not None:
+                next_word = None
+                if self.typo_bigram_next and len(pinyin_list) > 1:
+                    next_word = pinyin_list[1]
+                corrected = self.norvig_obj.correct_typo(first_pinyin, prev_word=None, next_word=next_word)
+                if corrected == first_pinyin:
+                    return '-'
+                first_pinyin = corrected
+            else:
+                return '-'
 
         pre_hanzi_list = [x for x in self.pinyin_hanzi[first_pinyin] if x in self.initial_prob]
 
@@ -98,7 +113,19 @@ class ViterbiDecoder(object):
             if pinyin not in self.pinyin_hanzi:
                 # del backpointer[:]
                 # del prob_matrix[:]
-                return '-'
+                if self.typo_correction and self.norvig_obj is not None:
+                    prev_word = None
+                    next_word = None
+                    if self.typo_bigram_prev:
+                        prev_word = pinyin_list[idx-1]
+                    if self.typo_bigram_next and idx < len(pinyin_list)-1:
+                        next_word = pinyin_list[idx+1]
+                    corrected = self.norvig_obj.correct_typo(pinyin, prev_word=prev_word, next_word=next_word)
+                    if corrected == pinyin:
+                        return '-'
+                    pinyin = corrected
+                else:
+                    return '-'
 
             for cur_hanzi in self.pinyin_hanzi[pinyin]:
                 cur_max_prob = -float('Inf')
@@ -202,7 +229,20 @@ class ViterbiDecoder(object):
                     i += 1
                     output_file.write(res + '\n')
 
+<<<<<<< HEAD
     def process(self):
+=======
+    def sub_decode2(self, l):
+        return "test"
+
+    def process(self, typo_correction=False, typo_train_file=None, typo_bigram_prev=False, typo_bigram_next=False):
+        self.typo_correction = typo_correction
+        self.typo_bigram_prev = typo_bigram_prev
+        self.typo_bigram_next = typo_bigram_next
+        if self.typo_correction and typo_train_file:
+            self.norvig_obj = norvig.Norvig(typo_train_file)
+
+>>>>>>> 76ec158d727d3c56b766ae8a85f84771ab098deb
         self.read_pinyin_hanzi_dict()
         self.read_all_pinyin()
         start = time.time()
@@ -221,5 +261,5 @@ if __name__ == "__main__":
     decoder = ViterbiDecoder('data/cut_lcmc_all')
     # decoder = ViterbiDecoder('data/ttt')
     # cProfile.run(decoder.process())
-    decoder.process()
+    decoder.process(typo_correction=False, typo_train_file='data/trainset.txt', typo_bigram_prev=False, typo_bigram_next=False)
     # decoder.main()
