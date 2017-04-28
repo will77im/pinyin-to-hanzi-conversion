@@ -229,11 +229,7 @@ class ViterbiDecoder(object):
                     i += 1
                     output_file.write(res + '\n')
 
-<<<<<<< HEAD
-    def process(self):
-=======
-    def sub_decode2(self, l):
-        return "test"
+
 
     def process(self, typo_correction=False, typo_train_file=None, typo_bigram_prev=False, typo_bigram_next=False):
         self.typo_correction = typo_correction
@@ -242,7 +238,6 @@ class ViterbiDecoder(object):
         if self.typo_correction and typo_train_file:
             self.norvig_obj = norvig.Norvig(typo_train_file)
 
->>>>>>> 76ec158d727d3c56b766ae8a85f84771ab098deb
         self.read_pinyin_hanzi_dict()
         self.read_all_pinyin()
         start = time.time()
