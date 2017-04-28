@@ -14,7 +14,7 @@ class Norvig(object):
         self.create_word_dict(input_file)
 
     def words(self, text):
-        return re.findall(r'\w+', text.lower())
+        return re.findall(r'\w+', re.sub(r'[^a-zA-Z ]', '', text).lower())
 
     def create_word_dict(self, input_file, bigrams=True):
         with open(input_file, 'r') as in_file:
@@ -23,7 +23,7 @@ class Norvig(object):
                 in_file.seek(0)
                 lines = in_file.read().splitlines()
                 for line in lines:
-                    words = line.strip().split(' ')
+                    words = re.sub(r'[^a-zA-Z ]', '', line).lower().strip().split()
                     for i in range(len(words) - 1):
                         if words[i] not in self.WORD_BIGRAMS:
                             self.WORD_BIGRAMS[words[i]] = {}
