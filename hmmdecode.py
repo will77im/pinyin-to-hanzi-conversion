@@ -54,8 +54,10 @@ class ViterbiDecoder(object):
 
             self.unigram = json.load(grams_file)['1']
             self.train_corpus_len = self.transition_prob['len']
+            # self.train_corpus_len = 216799929.0
             self.train_corpus_len_1 = math.log(1 / self.train_corpus_len)
-            self.train_corpus_len_4 = math.log(0.4 / self.train_corpus_len)
+            # self.train_corpus_len_4 = math.log(0.4 / self.train_corpus_len)
+            self.train_corpus_len_4 = math.log(0.8 / self.train_corpus_len)
 
     def backtrack(self, words, backpointer, last_tag):
         sequence = [None] * len(words)
@@ -79,9 +81,12 @@ class ViterbiDecoder(object):
             # del prob_matrix[:]
             return '-'
 
-        pre_hanzi_list = self.pinyin_hanzi[first_pinyin]
+        pre_hanzi_list = [x for x in self.pinyin_hanzi[first_pinyin] if x in self.initial_prob]
 
-        for hanzi in self.pinyin_hanzi[first_pinyin]:
+        # for hanzi in self.pinyin_hanzi[first_pinyin]:
+        #     if hanzi not in self.initial_prob:
+        #         continue
+        for hanzi in pre_hanzi_list:
             e = self.emission_prob[hanzi][first_pinyin]
             prob_matrix[0][hanzi] = self.initial_prob[hanzi] + e
 
@@ -105,10 +110,14 @@ class ViterbiDecoder(object):
                         self.transition_prob[pre_hanzi] = {}
                     if cur_hanzi not in self.transition_prob[pre_hanzi]:
                         if pre_hanzi in self.unigram:
+                            # print 'corpus size:  ' + str(self.train_corpus_len)
+                            # print 'uni:  ' + str(self.unigram[pre_hanzi])
                             self.transition_prob[pre_hanzi][cur_hanzi] = math.log(
                                 self.unigram[pre_hanzi]) + self.train_corpus_len_4
+                            # self.transition_prob[pre_hanzi][cur_hanzi] = math.log(self.unigram[pre_hanzi] * 0.4 / 11000000)
                         else:
                             self.transition_prob[pre_hanzi][cur_hanzi] = self.train_corpus_len_1
+                            # self.transition_prob[pre_hanzi][cur_hanzi] = math.log(1.0/60000)
 
                     prob = prob_matrix[idx - 1][pre_hanzi] + self.transition_prob[pre_hanzi][cur_hanzi]
 
@@ -193,9 +202,6 @@ class ViterbiDecoder(object):
                     i += 1
                     output_file.write(res + '\n')
 
-    def sub_decode2(self, l):
-        return "test"
-
     def process(self):
         self.read_pinyin_hanzi_dict()
         self.read_all_pinyin()
@@ -212,7 +218,7 @@ class ViterbiDecoder(object):
 
 if __name__ == "__main__":
     # decoder = ViterbiDecoder('data/cut_testset.txt')
-    decoder = ViterbiDecoder('data/cut_lcmc_a')
+    decoder = ViterbiDecoder('data/cut_lcmc_all')
     # decoder = ViterbiDecoder('data/ttt')
     # cProfile.run(decoder.process())
     decoder.process()

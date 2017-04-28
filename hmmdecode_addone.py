@@ -68,7 +68,7 @@ class ViterbiDecoder(object):
         return ' '.join(map(lambda x: x[0] + '/' + x[1], zip(words, sequence)))
 
     # @profile
-    def sub_decode(self, pinyin_list):
+    def sub_decode(self, pinyin_list, tt):
         backpointer = [None] * (len(pinyin_list) - 1)
         prob_matrix = [None] * len(pinyin_list)
 
@@ -79,9 +79,10 @@ class ViterbiDecoder(object):
             # del prob_matrix[:]
             return '-'
 
-        pre_hanzi_list = self.pinyin_hanzi[first_pinyin]
+        # pre_hanzi_list = self.pinyin_hanzi[first_pinyin]
+        pre_hanzi_list = [x for x in self.pinyin_hanzi[first_pinyin] if x in self.initial_prob]
 
-        for hanzi in self.pinyin_hanzi[first_pinyin]:
+        for hanzi in pre_hanzi_list:
             e = self.emission_prob[hanzi][first_pinyin]
             prob_matrix[0][hanzi] = self.initial_prob[hanzi] + e
 
@@ -104,9 +105,12 @@ class ViterbiDecoder(object):
                     if pre_hanzi in self.transition_prob and cur_hanzi in self.transition_prob[pre_hanzi]:
                         trans_prob = self.transition_prob[pre_hanzi][cur_hanzi]
                     elif pre_hanzi in self.transition_prob:
+                        # print self.transition_prob[pre_hanzi]['total']
+
                         trans_prob = math.log(1 / self.transition_prob[pre_hanzi]['total'])
                     else:
-                        trans_prob = math.log(1.0 / 60000)
+                        # trans_prob = math.log(1.0 / 60000)
+                        trans_prob = math.log(1.0 / 216799929)
 
                     prob = prob_matrix[idx - 1][pre_hanzi] + trans_prob
 
@@ -159,6 +163,7 @@ class ViterbiDecoder(object):
         with codecs.open(self.target_file_name, encoding='utf-8') as target_file:
             with codecs.open("data/hmmoutput.txt", 'w', encoding='utf-8') as output_file:
                 for lines in target_file:
+                    i += 1
                     # self.ft += 1
                     # if self.ft % 5000 == 0:
                     #     print 'emi: ' + str(sys.getsizeof(self.emission_prob))
@@ -196,10 +201,10 @@ class ViterbiDecoder(object):
                             # exit()
                             target_pinyin.extend(pinyin_split)
 
-                    res = self.sub_decode(target_pinyin)
+                    res = self.sub_decode(target_pinyin, i)
                     # res = self.sub_decode2(target_pinyin)
 
-                    i += 1
+                    # i += 1
                     output_file.write(res + '\n')
 
     def sub_decode2(self, l):
@@ -221,7 +226,7 @@ class ViterbiDecoder(object):
 
 if __name__ == "__main__":
     # decoder = ViterbiDecoder('data/cut_testset.txt')
-    decoder = ViterbiDecoder('data/cut_lcmc_a')
+    decoder = ViterbiDecoder('data/cut_lcmc_all')
     # decoder = ViterbiDecoder('data/ttt')
     # cProfile.run(decoder.process())
     decoder.process()
