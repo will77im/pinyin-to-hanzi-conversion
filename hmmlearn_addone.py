@@ -41,13 +41,13 @@ class HMM(object):
                 self.initial_prob[tag] = math.log(self.initial_prob[tag] / self.initial_prob["total"])
         # del self.initial_prob["total"]
 
-        # for tag in self.transition_prob:
-        #     for trans_tag in self.transition_prob[tag]:
-        #         if trans_tag == "total":
-        #             continue
-        #         self.transition_prob[tag][trans_tag] = math.log(
-        #             self.transition_prob[tag][trans_tag] / self.transition_prob[tag]["total"])
-        #         del self.transition_prob[tag]["total"]
+        for tag in self.transition_prob:
+            for trans_tag in self.transition_prob[tag]:
+                if trans_tag == "total":
+                    continue
+                self.transition_prob[tag][trans_tag] = math.log(
+                    self.transition_prob[tag][trans_tag] / self.transition_prob[tag]["total"])
+            # del self.transition_prob[tag]["total"]
 
         for tag in self.emission_prob:
             for word in self.emission_prob[tag]:
@@ -132,9 +132,9 @@ class HMM(object):
 
     def process(self):
         self.read_all_characters()
-        self.load_corpus(smoothing='stupid')
-        # self.load_corpus(smoothing='default')
-        self.load_grams()
+        # self.load_corpus(smoothing='stupid')
+        self.load_corpus(smoothing='default')
+        # self.load_grams()
         self.convert2log()
         self.output_model()
 

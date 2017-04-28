@@ -52,10 +52,10 @@ class ViterbiDecoder(object):
             self.transition_prob = hmm_model[1]
             self.emission_prob = hmm_model[2]
 
-            self.unigram = json.load(grams_file)['1']
-            self.train_corpus_len = self.transition_prob['len']
-            self.train_corpus_len_1 = math.log(1 / self.train_corpus_len)
-            self.train_corpus_len_4 = math.log(0.4 / self.train_corpus_len)
+            # self.unigram = json.load(grams_file)['1']
+            # self.train_corpus_len = self.transition_prob['len']
+            # self.train_corpus_len_1 = math.log(1 / self.train_corpus_len)
+            # self.train_corpus_len_4 = math.log(0.4 / self.train_corpus_len)
 
     def backtrack(self, words, backpointer, last_tag):
         sequence = [None] * len(words)
@@ -101,16 +101,25 @@ class ViterbiDecoder(object):
                 e = self.emission_prob[cur_hanzi][pinyin]
 
                 for pre_hanzi in pre_hanzi_list:
-                    if pre_hanzi not in self.transition_prob:
-                        self.transition_prob[pre_hanzi] = {}
-                    if cur_hanzi not in self.transition_prob[pre_hanzi]:
-                        if pre_hanzi in self.unigram:
-                            self.transition_prob[pre_hanzi][cur_hanzi] = math.log(
-                                self.unigram[pre_hanzi]) + self.train_corpus_len_4
-                        else:
-                            self.transition_prob[pre_hanzi][cur_hanzi] = self.train_corpus_len_1
+                    if pre_hanzi in self.transition_prob and cur_hanzi in self.transition_prob[pre_hanzi]:
+                        trans_prob = self.transition_prob[pre_hanzi][cur_hanzi]
+                    elif pre_hanzi in self.transition_prob:
+                        trans_prob = math.log(1 / self.transition_prob[pre_hanzi]['total'])
+                    else:
+                        trans_prob = math.log(1.0 / 60000)
 
-                    prob = prob_matrix[idx - 1][pre_hanzi] + self.transition_prob[pre_hanzi][cur_hanzi]
+                    prob = prob_matrix[idx - 1][pre_hanzi] + trans_prob
+
+                    # if pre_hanzi not in self.transition_prob:
+                    #     self.transition_prob[pre_hanzi] = {}
+                    # if cur_hanzi not in self.transition_prob[pre_hanzi]:
+                    #     if pre_hanzi in self.unigram:
+                    #         self.transition_prob[pre_hanzi][cur_hanzi] = math.log(
+                    #             self.unigram[pre_hanzi]) + self.train_corpus_len_4
+                    #     else:
+                    #         self.transition_prob[pre_hanzi][cur_hanzi] = self.train_corpus_len_1
+                    #
+                    # prob = prob_matrix[idx - 1][pre_hanzi] + self.transition_prob[pre_hanzi][cur_hanzi]
 
                     if prob > cur_max_prob:
                         cur_max_prob = prob
