@@ -18,7 +18,10 @@ class Norvig(object):
 
     def create_word_dict(self, input_file, bigrams=True):
         with open(input_file, 'r') as in_file:
-            self.WORDS = Counter(self.words(in_file.read()))
+            self.WORDS = Counter()
+            for line in in_file:
+                words = self.words(line)
+                self.WORDS.update(Counter(words))
             if bigrams:
                 in_file.seek(0)
                 lines = in_file.read().splitlines()
